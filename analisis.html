@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>SmartVest</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- PapaParse -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      background-color:#121212; 
+      color:#f5f5f5; 
+      font-family:'Poppins', sans-serif; 
+      text-align:center; 
+      margin:0; 
+      padding:0;
+      overflow-x:hidden;
+    }
+    header {
+      background:linear-gradient(90deg,#ff6f00,#ff8f00);
+      padding:15px 30px; 
+      font-size:22px; 
+      font-weight:600; 
+      text-align:left; 
+      letter-spacing:1px; 
+      box-shadow:0 2px 15px rgba(255,111,0,0.5);
+      position:relative;
+      z-index:10;
+    }
+    h1 {
+      margin-top:30px; 
+      font-size:42px; 
+      font-weight:600; 
+      color:#ff9100;
+      text-shadow:0 0 10px rgba(255,111,0,0.8);
+      position:relative;
+      z-index:10;
+    }
+    .subtitle { 
+      margin-bottom:10px; 
+      font-size:16px; 
+      font-style:italic; 
+      color:#bbb; 
+      position:relative;
+      z-index:10;
+    }
+    .note { 
+      margin-bottom:30px; 
+      font-size:14px; 
+      color:#ddd; 
+      line-height:1.6; 
+      background:#1e1e1e; 
+      padding:15px; 
+      border-radius:10px; 
+      display:inline-block; 
+      box-shadow:0 0 12px rgba(255,111,0,0.3);
+      border:1px solid #ff6f00;
+      position:relative;
+      z-index:10;
+    }
+    .form-container { 
+      background-color:#1a1a1a; 
+      display:grid; 
+      grid-template-columns:1fr 1fr; 
+      gap:20px; 
+      max-width:700px; 
+      margin:auto; 
+      padding:30px; 
+      border-radius:20px; 
+      box-shadow:0 0 20px rgba(255,111,0,0.3); 
+      animation: fadeIn 0.8s ease; 
+      position:relative;
+      z-index:10;
+    }
+    @keyframes fadeIn { 
+      from { opacity:0; transform: translateY(15px);} 
+      to { opacity:1; transform: translateY(0);} 
+    }
+    .form-group { display:flex; flex-direction:column; align-items:flex-start; }
+    label { margin-bottom:8px; font-weight:600; color:#ffb74d; }
+    select, input { 
+      width:100%; padding:12px; border-radius:10px; 
+      border:1px solid #444; background:#2a2a2a; 
+      color:white; font-size:14px; outline:none; transition:0.3s; 
+    }
+    select:focus, input:focus { 
+      border-color:#ff6f00; 
+      background:#333; 
+      box-shadow:0 0 12px #ff6f00aa; 
+    }
+    button { 
+      margin-top:30px; padding:14px 30px; 
+      background:linear-gradient(90deg,#ff6f00,#ff8f00); 
+      color:white; border:none; border-radius:30px; 
+      font-size:16px; font-weight:600; cursor:pointer; transition:0.3s; 
+      box-shadow:0 0 20px rgba(255,111,0,0.5); 
+      position:relative;
+      z-index:10;
+    }
+    button:hover { 
+      transform:scale(1.05); 
+      box-shadow:0 0 25px rgba(255,140,0,0.8); 
+    }
+    #output { 
+      text-align:center; background:#1f1f1f; padding:20px; border-radius:10px; 
+      max-width:900px; margin:30px auto; font-size:15px; 
+      box-shadow:0 0 15px rgba(255,111,0,0.3); 
+      position:relative;
+      z-index:10;
+    }
+    .risiko-aman { color:#4caf50; font-weight:600; }
+    .risiko-waspada { color:#ffeb3b; font-weight:600; }
+    .risiko-bahaya { color:#ff5252; font-weight:600; }
+    canvas.chart { 
+      max-width:1000px; 
+      margin:30px auto; 
+      display:block; 
+      position:relative;
+      z-index:10;
+    }
+    /* Canvas background */
+    #particles {
+      position: fixed;
+      top:0; left:0;
+      width:100%; height:100%;
+      z-index:0;
+      background:#121212;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<header>UNIVERSITAS DIPONEGORO</header>
+<h1>SmartVest</h1>
+<div class="subtitle">Alat bantu investasi untuk menghitung resiko terburuk suatu instrumen investasi</div>
+<div class="note">
+  📌 Catatan: <br>
+  Kolom 1 = Periode (Tanggal / Urutan) <br>
+  Kolom 2 = Harga Saham (Closing Price) <br>
+  Kolom 3 = Return (opsional, jika kosong akan dihitung otomatis dengan ln(Pt/Pt-1))
+</div>
+
+<form>
+  <div class="form-container">
+    <div class="form-group" style="grid-column: span 2;">
+      <label for="uploadCSV">Upload Data Saham (CSV)</label>
+      <input type="file" id="uploadCSV" accept=".csv">
+    </div>
+
+    <div class="form-group">
+      <label for="nominal">Nominal Investasi</label>
+      <input type="number" id="nominal" name="nominal" placeholder="contoh: 20000000">
+    </div>
+
+    <div class="form-group">
+      <label for="periode">Periode Investasi (Hari)</label>
+      <input type="number" id="periode" name="periode" placeholder="contoh: 30">
+    </div>
+
+    <div class="form-group">
+      <label for="ambang">Ambang Batas Risiko (%)</label>
+      <input type="number" id="ambang" placeholder="contoh: 10">
+      <small>*Ambang batas digunakan sebagai rekomendasi risiko saham</small>
+    </div>
+
+    <div class="form-group" style="grid-column: span 2;">
+      <label for="grafik">Tampilkan Grafik</label>
+      <select id="grafik" name="grafik">
+        <option value="ya">Iya</option>
+        <option value="tidak">Tidak</option>
+      </select>
+    </div>
+  </div>
+  <button type="button" onclick="lihatData()">HITUNG</button>
+</form>
+
+<div id="output"></div>
+<canvas id="chartSaham" class="chart" width="1000" height="400" style="display:none;"></canvas>
+
+<script>
+// === Animasi Partikel Glow ===
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles = [];
+for (let i = 0; i < 80; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 2 + 1,
+    dx: (Math.random() - 0.5) * 0.5,
+    dy: (Math.random() - 0.5) * 0.5
+  });
+}
+
+function drawParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,140,0,0.8)";
+    ctx.shadowColor = "rgba(255,140,0,1)";
+    ctx.shadowBlur = 15;
+    ctx.fill();
+    ctx.closePath();
+    p.x += p.dx;
+    p.y += p.dy;
+    if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+  });
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+window.addEventListener('resize', ()=>{
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+// === Script Analisis (sama seperti fix kamu) ===
+let csvData = [];
+let chartInstance = null;
+
+function toNumberFromString(s) {
+  if (s === null || s === undefined) return NaN;
+  if (typeof s === 'number') return s;
+  let str = String(s).trim();
+  if (str.indexOf('.') !== -1 && str.indexOf(',') !== -1) {
+    str = str.replace(/\./g, '').replace(',', '.');
+  } else {
+    str = str.replace(/,/g, '');
+  }
+  str = str.replace(/[^\d\.\-]/g,'');
+  const val = parseFloat(str);
+  return isNaN(val) ? NaN : val;
+}
+
+document.getElementById("uploadCSV").addEventListener("change", function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  Papa.parse(file, {
+    header: false,
+    skipEmptyLines: true,
+    complete: function(results) {
+      csvData = results.data.filter(r => r.length >= 2);
+      for (let i = 0; i < csvData.length; i++) {
+        csvData[i][1] = toNumberFromString(csvData[i][1]);
+        if (csvData[i].length >= 3) {
+          let maybeReturn = csvData[i][2];
+          csvData[i][2] = (maybeReturn && String(maybeReturn).trim() !== "") ? toNumberFromString(maybeReturn) : null;
+        } else {
+          csvData[i][2] = null;
+        }
+      }
+      for (let i = 1; i < csvData.length; i++) {
+        const prev = csvData[i-1][1];
+        const curr = csvData[i][1];
+        if ((csvData[i][2] === null || isNaN(csvData[i][2])) && !isNaN(prev) && !isNaN(curr) && prev > 0) {
+          csvData[i][2] = Math.log(curr/prev);
+        }
+      }
+      Swal.fire({ icon:'success', title:'Data berhasil diupload!', text:`Jumlah baris: ${csvData.length}`, confirmButtonColor:'#ff6f00' });
+    }
+  });
+});
+
+function cekPeringatan(kerugianPersen) {
+  let ambangInput = document.getElementById("ambang").value;
+  let ambang = ambangInput ? parseFloat(ambangInput) : 10;
+  if (kerugianPersen >= ambang) {
+    return `<span class="risiko-bahaya">⚠️ Peringatan: Kerugian 1 hari ${kerugianPersen.toFixed(2)}% > ${ambang}% (Risiko tinggi!)</span>`;
+  } else if (kerugianPersen >= ambang * 0.7) {
+    return `<span class="risiko-waspada">⚡ Waspada: Kerugian 1 hari ${kerugianPersen.toFixed(2)}%, mendekati ambang ${ambang}%.</span>`;
+  } else {
+    return `<span class="risiko-aman">✅ Aman: Kerugian 1 hari ${kerugianPersen.toFixed(2)}%, di bawah ambang ${ambang}%.</span>`;
+  }
+}
+
+function lihatData() {
+  if (csvData.length === 0) {
+    Swal.fire({ icon:'error', title:'Oops...', text:'Upload data saham dulu!' });
+    return;
+  }
+  const nominal = parseFloat(document.getElementById("nominal").value);
+  const periode = parseInt(document.getElementById("periode").value);
+  if (!nominal || !periode) {
+    Swal.fire({ icon:'warning', title:'Lengkapi data!', text:'Nominal dan periode wajib diisi.' });
+    return;
+  }
+  const returns = csvData.map(r => r[2]).filter(v => !isNaN(v));
+  if (returns.length === 0) {
+    Swal.fire({ icon:'error', title:'Data Error', text:'Tidak ada return yang valid untuk dihitung.' });
+    return;
+  }
+  const sortedReturns = [...returns].sort((a,b)=>a-b);
+  const alpha = 0.01;
+  const idx = Math.floor(alpha * sortedReturns.length);
+  const varReturn = sortedReturns[idx];
+  const VaR1 = nominal * Math.abs(varReturn);
+  const VaR = VaR1 * Math.sqrt(periode);
+  const kerugianPersen = (VaR1 / nominal) * 100;
+  const pesanRisiko = cekPeringatan(kerugianPersen);
+
+  document.getElementById("output").innerHTML = `
+    <h2 style="color:#ff9100; text-shadow:0 0 8px rgba(255,111,0,0.8);">Hasil Analisis</h2>
+    <p><b>Value at Risk (Historical Simulation, 99%):</b> Rp ${VaR.toLocaleString('id-ID',{minimumFractionDigits:2})}</p>
+    <p>Jika Anda berinvestasi Rp ${nominal.toLocaleString('id-ID')} selama ${periode} hari, potensi kerugian maksimal Rp ${VaR.toLocaleString('id-ID',{minimumFractionDigits:2})} (99% confidence).</p>
+    <p style="margin-top:20px;">${pesanRisiko}</p>
+  `;
+  Swal.fire({ icon:'info', title:'Analisis selesai ✅', text:'Hasil sudah ditampilkan di bawah.', confirmButtonColor:'#ff6f00' });
+
+  if (document.getElementById("grafik").value === 'ya') {
+    const ctx = document.getElementById('chartSaham').getContext('2d');
+    document.getElementById('chartSaham').style.display = 'block';
+    if (chartInstance) chartInstance.destroy();
+    const labels = csvData.map(r => r[0]);
+    const harga = csvData.map(r => r[1]);
+    chartInstance = new Chart(ctx, {
+      type:'line',
+      data:{ labels:labels, datasets:[{ 
+        label:'Harga Saham', 
+        data:harga, 
+        borderColor:'#ff6f00', 
+        backgroundColor:'rgba(255,111,0,0.15)', 
+        borderWidth:2, tension:0.15, pointRadius:0 
+      }]},
+      options:{ 
+        plugins:{ legend:{ labels:{ color:'white' } } }, 
+        scales:{ x:{ ticks:{ color:'white' } }, y:{ ticks:{ color:'white' } } } 
+      }
+    });
+  }
+}
+</script>
+</body>
+</html>

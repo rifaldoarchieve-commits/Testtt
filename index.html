@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartVest - Pilih Saham</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      margin:0;
+      font-family:'Poppins', sans-serif;
+      background:#121212;
+      color:#f5f5f5;
+      text-align:center;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      min-height:100vh;
+      overflow-y:auto;   /* biar bisa discroll ke bawah */
+      overflow-x:hidden; /* cegah geser samping */
+    }
+    header {
+      background:linear-gradient(90deg,#ff6f00,#ff8f00);
+      padding:15px 60px;
+      font-size:22px;
+      font-weight:600;
+      text-align:left;
+      letter-spacing:1px;
+      width:100%;
+      box-shadow:0 2px 15px rgba(255,111,0,0.5);
+      color:white;
+      position:relative;
+      z-index:1;
+    }
+    h1 {
+      margin-top:30px;
+      font-size:42px;
+      font-weight:600;
+      color:#ff9100;
+      text-shadow:0 0 10px rgba(255,111,0,0.8);
+    }
+    p {
+      font-size:16px;
+      color:#bbb;
+      margin-bottom:20px;
+    }
+    /* Stepper progress */
+    .steps {
+      display:flex;
+      justify-content:center;
+      margin:20px 0;
+      gap:30px;
+      flex-wrap:wrap;
+      position:relative;
+      z-index:1;
+    }
+    .step {
+      background:#1a1a1a;
+      padding:12px 18px;
+      border-radius:15px;
+      box-shadow:0 0 10px rgba(255,111,0,0.3);
+      font-size:14px;
+      color:#ffb74d;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    /* Tips box */
+    .tip-box {
+      background:#1e1e1e;
+      padding:15px 20px;
+      border-left:5px solid #ff9100;
+      border-radius:12px;
+      margin:20px auto;
+      width:70%;
+      box-shadow:0 0 12px rgba(255,140,0,0.3);
+      font-size:14px;
+      text-align:left;
+      color:#ddd;
+      position:relative;
+      z-index:1;
+    }
+    .card {
+      background:#1a1a1a;
+      padding:30px;
+      border-radius:20px;
+      box-shadow:0 0 20px rgba(255,111,0,0.3);
+      width:350px;
+      margin:40px 0;
+      transition:transform 0.3s ease;
+      position:relative;
+      z-index:1;
+    }
+    .card:hover {
+      transform:translateY(-5px);
+    }
+    select, button {
+      margin:10px 0;
+      padding:12px 18px;
+      border-radius:10px;
+      border:none;
+      font-size:15px;
+      cursor:pointer;
+      font-family:'Poppins', sans-serif;
+      transition:all 0.3s ease;
+      width:100%;
+    }
+    select {
+      background:#2a2a2a;
+      color:white;
+      border:1px solid #ff6f00;
+    }
+    select:focus {
+      border-color:#ff9100;
+      background:#333;
+      box-shadow:0 0 12px #ff6f00aa;
+    }
+    select option {
+      background:#1a1a1a;
+      color:#f5f5f5;
+      padding:10px;
+      font-size:15px;
+    }
+    .btn {
+      font-weight:600;
+      background:linear-gradient(90deg,#ff6f00,#ff9100);
+      color:white;
+      box-shadow:0 0 15px rgba(255,111,0,0.5);
+      border-radius:30px;
+    }
+    .btn:hover {
+      transform:scale(1.05);
+      box-shadow:0 0 20px rgba(255,140,0,0.8);
+    }
+    .btn-secondary {
+      background:linear-gradient(90deg,#ff9100,#ffab40);
+      box-shadow:0 0 15px rgba(255,145,0,0.5);
+    }
+    .btn-secondary:hover {
+      background:linear-gradient(90deg,#ffab40,#ffd180);
+      box-shadow:0 0 20px rgba(255,145,0,0.7);
+    }
+    /* Canvas background */
+    #bgCanvas {
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      z-index:-1; /* tetap di belakang */
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+
+  <header>UNIVERSITAS DIPONEGORO</header>
+  <h1>SmartVest 📈</h1>
+  <p>Pilih saham untuk memulai analisis investasi Anda</p>
+
+  <!-- Stepper progress -->
+  <div class="steps">
+    <div class="step">1️⃣ Pilih Saham </div>
+    <div class="step">2️⃣ Unduh Data</div>
+    <div class="step">3️⃣ Lanjut Analisis</div>
+  </div>
+
+  <!-- Tips box -->
+  <div class="tip-box">
+    💡 <b>Tips:</b> Jika belum punya data, silakan unduh terlebih dahulu. Kalau sudah, Anda bisa langsung melanjutkan analisis.
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:15px; color:#ffb74d;">📊 Pilih Saham</h3>
+    <select id="saham">
+      <option value="Bank Rakyat Persero Stock Price History.csv"> BBRI - Bank Rakyat Indonesia</option>
+      <option value="GoTo Gojek Tokopedia PT Stock Price History.csv"> GOTO - GoTo Gojek Tokopedia</option>
+      <option value="Bank Central Asia Stock Price History.csv"> BBCA - Bank Central Asia</option>
+      <option value="Bumi Resources Stock Price History.csv"> BUMI - Bumi Resources</option>
+      <option value="Telkom Indonesia Stock Price History.csv"> TLKM - Telkom Indonesia</option>
+      <option value="Humpuss Maritim Internasional Tbk Stock Price History.csv"> HUMI - Humpuss Maritim Internasional</option>
+      <option value="Astra International Stock Price History.csv"> ASII - Astra International</option>
+      <option value="Era Media Sejahtera Tbk PT Stock Price History.csv"> DOOH - Era Media Sejahtera</option>
+      <option value="PT Wulandari Bangun Laksana Tbk Stock Price History.csv"> BSBK - PT Wulandari Bangun Laksana</option>
+      <option value="Teknologi Karya Digital Nusa PT Tbk Stock Price History.csv"> TRON - Teknologi Karya Digital Nusa</option>
+      <option value="Bumi Resources Min Stock Price History.csv"> BRMS - Bumi Resources Minerals</option>
+      <option value="Surya Permata Andalan Tbk PT Stock Price History.csv"> NATO - Surya Permata Andalan Prima</option>
+      <option value="PT Saptausaha Gemilangindah Tbk Stock Price History.csv"> SAGE - Saptausaha Gemilangindah</option>
+      <option value="Astrindo Nusantara Infrasruktur Tbk PT Stock Price History.csv"> BIPI - Astrindo Nusantara Infrasruktur</option>
+      <option value="PT VKTR Teknologi Mobilitas Stock Price History.csv"> VKTR - VKTR Teknologi Mobilitas</option>
+      <option value="Sinergi Inti Andalan Prima Tbk PT Stock Price History.csv"> INET - Sinergi Inti Andalan Prima</option>
+      <option value="Bhakti Multi Artha Stock Price History.csv"> BHAT - Bhakti Multi Artha</option>
+      <option value="Bukalapak.com PT Stock Price History.csv"> BUKA - Bukalapak</option>
+      <option value="Energi Mega Persada Stock Price History.csv"> ENRG - Energi Mega Persada</option>
+      <option value="Sentul City Stock Price History.csv"> BKSL - Sentul City</option>
+      <option value="PT Nusantara Sawit Sejahtera Tbk Stock Price History.csv"> NSSS - Nusantara Sawit Sejahtera</option>
+      <option value="PT Lini Imaji Kreasi Ecosystem Tbk Stock Price History.csv"> FUTR - Lini Imaji Kreasi Ecosystem</option>
+      <option value="Solusi Sinergi Digital Tbk PT Stock Price History.csv"> WIFI - Solusi Sinergi Digital</option>
+      <option value="Aviana Sinar Abadi PT Tbk Stock Price History.csv"> IRSX - Aviana Sinar Abadi</option>
+      <option value="Aneka Tambang Persero Stock Price History.csv"> ANTM - Aneka Tambang Persero</option>
+    </select>
+    <button class="btn" onclick="unduhData()">📥 Unduh Data</button>
+    <button class="btn btn-secondary" onclick="lanjutAnalisis()">➡ Lanjut Analisis</button>
+  </div>
+
+  <script>
+    function unduhData() {
+      const saham = document.getElementById("saham").value;
+      // proses unduh file
+      window.location.href = `data/${saham}`;
+      
+      // Notifikasi SweetAlert2 kecil (toast)
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Data berhasil diunduh 📥",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true
+      });
+    }
+
+    function lanjutAnalisis() {
+      document.body.style.opacity = 0;
+      setTimeout(() => {
+        window.location.href = "analisis.html";
+      }, 400);
+    }
+
+    // Animasi partikel background
+    const canvas = document.getElementById("bgCanvas");
+    const ctx = canvas.getContext("2d");
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 2 + 1,
+        dx: (Math.random() - 0.5) * 0.5,
+        dy: (Math.random() - 0.5) * 0.5
+      });
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#ff9100";
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        p.x += p.dx;
+        p.y += p.dy;
+
+        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+      });
+      requestAnimationFrame(drawParticles);
+    }
+    drawParticles();
+  </script>
+</body>
+</html>
