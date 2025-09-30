@@ -226,7 +226,7 @@ window.addEventListener('resize', ()=>{
   canvas.height = window.innerHeight;
 });
 
-// === Script Analisis (sama seperti fix kamu) ===
+// === Script Analisis ===
 let csvData = [];
 let chartInstance = null;
 
@@ -318,9 +318,12 @@ function lihatData() {
   `;
   Swal.fire({ icon:'info', title:'Analisis selesai ✅', text:'Hasil sudah ditampilkan di bawah.', confirmButtonColor:'#ff6f00' });
 
-  if (document.getElementById("grafik").value === 'ya') {
-    const ctx = document.getElementById('chartSaham').getContext('2d');
-    document.getElementById('chartSaham').style.display = 'block';
+  const grafikOpt = document.getElementById("grafik").value;
+  const chartCanvas = document.getElementById('chartSaham');
+
+  if (grafikOpt === 'ya') {
+    const ctx = chartCanvas.getContext('2d');
+    chartCanvas.style.display = 'block';
     if (chartInstance) chartInstance.destroy();
     const labels = csvData.map(r => r[0]);
     const harga = csvData.map(r => r[1]);
@@ -338,8 +341,15 @@ function lihatData() {
         scales:{ x:{ ticks:{ color:'white' } }, y:{ ticks:{ color:'white' } } } 
       }
     });
+  } else {
+    chartCanvas.style.display = 'none';
+    if (chartInstance) {
+      chartInstance.destroy();
+      chartInstance = null;
+    }
   }
 }
 </script>
 </body>
 </html>
+
